@@ -2,20 +2,30 @@ import pickle
 import numpy as np
 from fastapi import FastAPI
 import tensorflow as tf
-from tensorflow.keras.models import load_model
+from tensorflow.keras.models import load_model, model_from_json
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
+import urllib.request
+from PIL import Image
+
 # model_link = "https://drive.google.com/file/d/1F8WjoOqhF2QLkceAQVFSJ2I9eI58bZJe/view?usp=drive_link"
-model = load_model("/home/alex/Downloads/bimodal.h5")
+# model = load_model("/home/alex/Downloads/bimodal.h5")
+model = load_model("../models/bimodal.h5")
+# filename_model, headers_model = urllib.request.urlretrieve("https://drive.google.com/uc?id=1F8WjoOqhF2QLkceAQVFSJ2I9eI58bZJe")
+# model = load_model(filename_model)
+# model = tf.keras.models.model_from_json("/home/alex/Downloads/bimodal.json/model.json")
 
 # image_path="./images/images/crop_300_train/image_664491_product_184739.jpg"
-image_path="/home/alex/Downloads/image_664491_product_184739.jpg"
+# image_path="/home/alex/Downloads/image_664491_product_184739.jpg"
+filename_image, headers_image = urllib.request.urlretrieve("https://drive.google.com/uc?export=view&id=16o4Pnph638fJ17-b4ugbqNY6lEGmjEg9")
+# img = Image.open(filename_image)
+image_path=filename_image
 text_input='Jeremy Mc Grath Vs Pastrana'
 
-with open("./data/label_encoder.pickle", "rb") as handle:
+with open("../models/label_encoder.pickle", "rb") as handle:
     le = pickle.load(handle)
 
-with open("./data/tokenizer.pickle", "rb") as handle:
+with open("../models/tokenizer.pickle", "rb") as handle:
     tokenizer = pickle.load(handle)
 
 def preprocess_image(image_path, resize=(200, 200)):
