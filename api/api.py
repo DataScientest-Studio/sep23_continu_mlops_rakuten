@@ -1,6 +1,8 @@
 import pickle
 import numpy as np
 import pandas as pd
+import gdown
+import os.path
 from fastapi import FastAPI, HTTPException
 import tensorflow as tf
 from tensorflow.keras.models import load_model
@@ -28,7 +30,16 @@ gdrive_images = google_drive_details[["id", "name"]]
 # -------
 
 # google drive link : https://drive.google.com/file/d/1F8WjoOqhF2QLkceAQVFSJ2I9eI58bZJe/view?usp=drive_link
-model = load_model("/home/alex/Projet_Rakuten/bimodal.h5")
+file_id="1F8WjoOqhF2QLkceAQVFSJ2I9eI58bZJe"
+url = f'https://drive.google.com/uc?id={file_id}'
+output = '../../model.h5'
+
+if os.path.isfile(output):
+    print('model file already exist')
+else:
+    gdown.download(url, output, quiet=False)
+
+model = load_model(output)
 
 
 with open("../data/label_encoder.pickle", "rb") as handle:
