@@ -9,6 +9,12 @@ from pydantic import BaseModel
 import shutil
 import os
 from typing import Optional
+import re
+from unidecode import unidecode
+from nltk.tokenize import RegexpTokenizer
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+
 
 import urllib.request
 
@@ -44,6 +50,15 @@ with open("./notebook/label_encoder.pickle", "rb") as handle:
 with open("./notebook/tokenizer.pickle", "rb") as handle:
     tokenizer = pickle.load(handle)
 
+
+stop_words = set(stopwords.words('french'))
+stop_words.update(stopwords.words('english'))
+stop_words.update(stopwords.words('german'))
+
+def remove_accents(text):
+    return unidecode(text) if text else text
+
+
 def preprocess_image(image_path, resize=(200, 200)):
     im = tf.io.read_file(image_path)
     im = tf.image.decode_png(im, channels=3)
@@ -57,9 +72,18 @@ def preprocess_image_jpg(image_path, resize=(200, 200)):
     return im
 
 def preprocess_text(text, tokenizer, max_len=100):
-    sequence = tokenizer.texts_to_sequences([text])
+    text = remove_accents(text)
+    text = text.lower()
+    text = re.sub('[0-9]', '', text)
+    text = re.sub('[^\w\s]', '', text)
+    nltk_tokenizer = RegexpTokenizer(r'\b[a-z]{2,}\b')
+    tokens = nltk_tokenizer.tokenize(text)
+    lemmatizer = WordNetLemmatizer()
+    lemmatized = [lemmatizer.lemmatize(token) for token in tokens]
+    cleaned = [word for word in lemmatized if word not in stop_words]
+    sequence = tokenizer.texts_to_sequences([' '.join(cleaned)])
     padded_sequence = pad_sequences(sequence, maxlen=max_len)
-    return padded_sequence[0]  # Retirer np.expand_dims dans la partie de prédiction
+    return padded_sequence[0]  
 
 # liste désignations des catégories
 categories = {
@@ -177,51 +201,6 @@ async def get_prediction(productid):
         raise HTTPException(status_code=404, detail='Produit inconnu')
 
 
-"""
-@api.post("/get_prediction_input", name="Prédiction avec Entrée Utilisateur")
-async def get_prediction_input(input: PredictionInput, image: UploadFile = File(...)):
-    
-    Description :
-    Renvoie la prédiction de la catégorie du produit basée sur le titre, la description et l'image fournis.
-
-    Arguments :
-    - titre : Titre du produit.
-    - description : Description du produit.
-    - image : Image du produit.
-
-    Renvoie :
-    - La prédiction de la catégorie.
-    
-
-    # Sauvegarde temporaire de l'image
-    image_path = f"temp_{image.filename}"
-    with open(image_path, "wb") as buffer:
-        shutil.copyfileobj(image.file, buffer)
-
-    # Prétraitement de l'image et du texte
-    image_processed = preprocess_image_jpg(image_path)
-    text = preprocess_text(f"{input.titre} {input.description}", tokenizer)
-
-    # Suppression de l'image temporaire
-    os.remove(image_path)
-
-    # Ajustement de la forme des données pour correspondre à l'entrée du modèle
-    image_processed = np.expand_dims(image_processed, axis=0)  # Ajout d'une dimension pour le batch
-    text = np.expand_dims(text, axis=0)  # Ajout d'une dimension pour le batch
-
-    # Prédiction
-    prediction = model.predict([image_processed, text])
-    predicted_class = np.argmax(prediction, axis=1)
-    predicted_label = le.inverse_transform(predicted_class)
-
-    if predicted_label[0] in categories:
-        return {
-            'predicted category': categories[predicted_label[0]]
-        }
-    else:
-        return "Catégorie non trouvée"
-        
- """
  
 @api.post("/get_prediction_input")
 async def get_prediction_input(titre: str = Form(...), 
