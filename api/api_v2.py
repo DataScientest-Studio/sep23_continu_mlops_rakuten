@@ -1,26 +1,29 @@
+from datetime import datetime, timedelta
+import os.path
+import re
+import shutil
+import urllib.request
 import pickle
+import gdown
+import jwt
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 import tensorflow as tf
+from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile, Form
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jwt import InvalidTokenError
+from passlib.context import CryptContext
+from pydantic import BaseModel
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from pydantic import BaseModel
-import shutil
-import os
 from typing import Optional
-import re
-from unidecode import unidecode
-from nltk.tokenize import RegexpTokenizer
-from nltk.stem import WordNetLemmatizer
+
+# NLTK et traitement de texte
 from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import RegexpTokenizer
+from unidecode import unidecode
 
-
-import urllib.request
-
-class PredictionInput(BaseModel):
-    titre: str
-    description: str
 
 # --------
 # données
@@ -41,23 +44,23 @@ gdrive_images = google_drive_details[["id", "name"]]
 # -------
 
 # google drive link : https://drive.google.com/file/d/1F8WjoOqhF2QLkceAQVFSJ2I9eI58bZJe/view?usp=drive_link
-model = load_model("./notebook/bimodal.h5")
+file_id="1F8WjoOqhF2QLkceAQVFSJ2I9eI58bZJe"
+url = f'https://drive.google.com/uc?id={file_id}'
+output = '../../model.h5'
+
+if os.path.isfile(output):
+    print('model file already exist')
+else:
+    gdown.download(url, output, quiet=False)
+
+model = load_model(output)
 
 
-with open("./notebook/label_encoder.pickle", "rb") as handle:
+with open("../data/label_encoder.pickle", "rb") as handle:
     le = pickle.load(handle)
 
-with open("./notebook/tokenizer.pickle", "rb") as handle:
+with open("../data/tokenizer.pickle", "rb") as handle:
     tokenizer = pickle.load(handle)
-
-
-stop_words = set(stopwords.words('french'))
-stop_words.update(stopwords.words('english'))
-stop_words.update(stopwords.words('german'))
-
-def remove_accents(text):
-    return unidecode(text) if text else text
-
 
 def preprocess_image(image_path, resize=(200, 200)):
     im = tf.io.read_file(image_path)
@@ -70,6 +73,14 @@ def preprocess_image_jpg(image_path, resize=(200, 200)):
     im = tf.image.decode_jpeg(im, channels=3)
     im = tf.image.resize(im, resize, method='nearest')
     return im
+
+
+stop_words = set(stopwords.words('french'))
+stop_words.update(stopwords.words('english'))
+stop_words.update(stopwords.words('german'))
+
+def remove_accents(text):
+    return unidecode(text) if text else text
 
 def preprocess_text(text, tokenizer, max_len=100):
     text = remove_accents(text)
@@ -126,6 +137,92 @@ api = FastAPI(
     version="1.0")
 
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# Configuration pour le JWT
+SECRET_KEY = "secret"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRATION = 30
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+
+users_db = {
+
+    "luffy": {
+        "username": "luffy",
+        "name": "luffy",
+        "email": "luffy@chapeau.com",
+        "hashed_password": pwd_context.hash('123456789'),
+        "resource" : "rakuten",
+    },
+    
+}
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_data = TokenData(username=username)
+    except InvalidTokenError:
+        raise credentials_exception
+    user = users_db.get(username, None)
+    if user is None:
+        raise credentials_exception
+    return user
+
+@api.post("/token", response_model=Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    Description:
+    Cette route permet à un utilisateur de s'authentifier en fournissant un nom d'utilisateur et un mot de passe. Si l'authentification est réussie, elle renvoie un jeton d'accès JWT.
+
+    Args:
+    - form_data (OAuth2PasswordRequestForm, dépendance): Les données de formulaire contenant le nom d'utilisateur et le mot de passe.
+
+    Returns:
+    - Token: Un modèle de jeton d'accès JWT.
+
+    Raises:
+    - HTTPException(400, detail="Incorrect username or password"): Si l'authentification échoue en raison d'un nom d'utilisateur ou d'un mot de passe incorrect, une exception HTTP 400 Bad Request est levée.
+    """
+
+    user = users_db.get(form_data.username)
+    hashed_password = user.get("hashed_password")
+    if not user or not verify_password(form_data.password, hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRATION)
+    access_token = create_access_token(data={"sub": form_data.username}, expires_delta=access_token_expires)
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
 @api.get('/status', name="Status")
 async def get_status():
     """
@@ -135,7 +232,23 @@ async def get_status():
         'status': 1
     }
 
+@api.get("/secured")
+def read_private_data(current_user: str = Depends(get_current_user)):
+    """
+    Description:
+    Cette route renvoie un message uniquement si l'utilisateur est authentifié.
 
+    Args:
+    - current_user (str, dépendance): Le nom d'utilisateur de l'utilisateur actuellement authentifié.
+
+    Returns:
+    - JSON: Renvoie un JSON contenant un message de salutation sécurisé si l'utilisateur est authentifié, sinon une réponse non autorisée.
+
+    Raises:
+    - HTTPException(401, detail="Unauthorized"): Si l'utilisateur n'est pas authentifié, une exception HTTP 401 Unauthorized est levée.
+    """
+
+    return {"message": "go pour planter l api!"}
 
 @api.get('/predictcategory/{productid:int}', name="Prédiction")
 async def get_prediction(productid):
@@ -201,7 +314,7 @@ async def get_prediction(productid):
         raise HTTPException(status_code=404, detail='Produit inconnu')
 
 
- 
+
 @api.post("/get_prediction_input")
 async def get_prediction_input(titre: str = Form(...), 
                                description: Optional[str] = Form(None), 
@@ -240,4 +353,5 @@ async def get_prediction_input(titre: str = Form(...),
             'predicted category': categories[predicted_label[0]]
         }
     else:
-        return "Catégorie non trouvée"
+        raise HTTPException(status_code=401, detail='Prediction de categorie invalide')
+        
