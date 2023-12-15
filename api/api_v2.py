@@ -23,7 +23,7 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import RegexpTokenizer
 from unidecode import unidecode
-
+import nltk
 
 # --------
 # données
@@ -37,7 +37,7 @@ df = df[["productid", "path", "Titre_annonce", "Description"]]
 google_drive_details = pd.read_csv('https://drive.google.com/uc?id=1gNsTA2Xb3CjLj193tACefqS_KMXNyBic')
 gdrive_images = google_drive_details[["id", "name"]]
 
-
+nltk.download('stopwords')
 
 # -------
 # modele
