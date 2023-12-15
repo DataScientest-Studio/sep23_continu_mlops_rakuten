@@ -354,4 +354,29 @@ async def get_prediction_input(titre: str = Form(...),
         }
     else:
         raise HTTPException(status_code=401, detail='Prediction de categorie invalide')
-        
+    
+class Item(BaseModel):
+    productID:str
+    categoryPredicted:str
+    categoryChangedByUser:str
+    categoryID:str
+
+@api.post('/Feedback')
+async def add_data(product : Item):
+    '''
+    Description :
+    -   Ajout du feedback utilisateur sur la performance du modèle à la base de données 
+    -   Pour l'intstant il ajoute seulement les données fournis par l'utilisateur dans le fichier ProductUSerFeedback.csv
+
+    Renvoie : Les différentes informations de l'article qui ont été ajouté à la base
+
+    '''
+    data_to_add = pd.DataFrame.from_dict(product, orient='columns')
+    data_to_add = data_to_add.T
+    data_to_add.columns = data_to_add.iloc[0]
+    data_to_add = data_to_add[1:] # enlever la première ligne
+
+    #df = pd.read_csv('./ProductUserFeedback.csv')
+    data_to_add.to_csv('../data/ProductUserFeedback.csv', mode ='a', index = False, header = False)
+
+    return product        
