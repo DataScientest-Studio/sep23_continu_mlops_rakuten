@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  entrainement:
+    image: alexluneau/entrainement
+    networks:
+      - rakuten_network
+     
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            capabilities: [gpu]
+
+    environment:
+      - path_input=/app/data/
+      - path_output=/app/data/
+    volumes:
+      - /mnt/d/MLOps_Rakuten/data:/app/data
+
+
+volumes:
+  rakuten_volume:
+
+networks:
+  rakuten_network:
+     driver : bridge
