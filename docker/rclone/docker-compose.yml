@@ -1,0 +1,23 @@
+version: "3.8"
+services:
+
+  rclone:
+    image: rclone/rclone
+    container_name: rclone_mount
+    security_opt:
+      - apparmor:unconfined
+    restart: unless-stopped
+    volumes:
+      - ./.config:/config/rclone #rclone config location (i.e., the remote credentials)
+      - ./data:/data:shared
+      - ./log:/log
+      - ./cache:/cache
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+    privileged: true
+    user: 1000:1000
+    cap_add:
+      - SYS_ADMIN
+    devices:
+      - /dev/fuse #IMPORTANT need to install FUSE on the host first. This is used to mount the remote to the host
+    command: "mount Gdrive_rakuten2: /data --log-file /log/rclone.log --log-level DEBUG --buffer-size 128M --checkers 20 --transfers 5 --vfs-read-ahead 1G --vfs-cache-mode minimal --cache-dir /cache --allow-other --allow-non-empty &"
