@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  web:
+    build: ./docker/fastapi
+    networks:
+      - rakuten_network
+    ports:
+      - "8000:8000"
+    volumes : 
+      -./docker/fastapi :/app/data
+
+volumes:
+  rakuten_volume:
+
+networks:
+  rakuten_network:
+     driver : bridge

@@ -1,0 +1,15 @@
+pandas
+passlib
+gdown
+numpy
+regex
+glob2
+pickle-mixin
+joblib
+unidecode
+python-multipart
+tensorflow
+scikit-learn
+nltk
+PyJWT
+pickle5
