@@ -5,7 +5,7 @@ import math
 import glob
 import pickle
 import joblib
-
+from datetime import datetime
 import os
 
 from unidecode import unidecode
@@ -44,14 +44,18 @@ if gpus:
         print(e)
 
 ###import des variables environnement donnees ds docker-compose
-path_input=os.getenv('path_input')
-path_output=os.getenv('path_output')
+
+path_data=  os.getenv('path_input_data')  
+path_images_train=  os.getenv('path_images_train') 
+path_images_test=  os.getenv('path_images_test')   
+path_model=  os.getenv('path_model') 
+
 
 ###Les fichiers csv proviennent du challenge Rakuten
 ### Une copie sur ce google drive : https://drive.google.com/drive/folders/1PltQt7eFWu5lkGf4jRdqqRIZaykBlta8?usp=drive_link
 
-X_train_path=os.path.join(path_input,'X_train_update.csv')
-y_train_path=os.path.join(path_input,'Y_train.csv')
+X_train_path=os.path.join(path_data,'X_train_update.csv')
+y_train_path=os.path.join(path_data,'Y_train.csv')
 
 X_train = pd.read_csv(X_train_path, index_col=0)
 y_train = pd.read_csv(y_train_path, index_col=0)
@@ -135,7 +139,7 @@ y_train_final =y_train.prdtypecode
 
 ### encodage identique de y pour les 2 models text et image
 
-label_output_path=os.path.join(path_output,'label_encoder.joblib')
+label_output_path=os.path.join(path_data,'label_encoder.joblib')
 
 
 le = LabelEncoder()
@@ -150,7 +154,7 @@ y_train_onehot=to_categorical(y_train_encoded, num_classes=27)
 
 ###sauver le labelencoder
 
-label_output_path_pickle=os.path.join(path_output,'label_encoder.pickle')
+label_output_path_pickle=os.path.join(path_data,'label_encoder.pickle')
 
 with open(label_output_path_pickle, "wb") as handle:
     pickle.dump(le, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -187,7 +191,7 @@ x_test_text = tf.keras.preprocessing.sequence.pad_sequences(x_test, maxlen=max_l
 
 ##sauver tokenizer
 
-label_output_tokenizer=os.path.join(path_output,'tokenizer.pickle')
+label_output_tokenizer=os.path.join(path_data,'tokenizer.pickle')
 
 with open(label_output_tokenizer, "wb") as handle:
     pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -224,8 +228,8 @@ model_te.summary()
 
 ##images d'origine telechargez sur le challenge Rakuten 500*500 et avec bord blanc non viré
 
-train_images_path = os.path.join(path_input, 'image_train', '*.jpg')
-test_images_path = os.path.join(path_input, 'image_test', '*.jpg')
+train_images_path = os.path.join(path_images_train, '*.jpg')
+test_images_path = os.path.join(path_images_test, '*.jpg')
 
 #liste_train = glob.glob('/app/data/image_train/*.jpg')
 #liste_test = glob.glob('/app/data/image_test/*.jpg')
@@ -378,8 +382,10 @@ model.fit(
     epochs=10,
     callbacks=[lr_plateau, early_stopping]
 )
-
-evaluate_path=os.path.join(path_output,'classification_report.txt')
+now = datetime.now()
+formatted_datetime = now.strftime("%Y%m%d_%H%M%S")
+filename = f"classification_report_{formatted_datetime}.txt"
+evaluate_path=os.path.join(path_model,filename)
 
 def evaluate_model(model, gen_test, validation_steps, path):
     y_true = []
@@ -408,7 +414,7 @@ def evaluate_model(model, gen_test, validation_steps, path):
 gen_test = generator(dataset_test, text_test_set)
 evaluate_model(model, gen_test, validation_steps, evaluate_path)
 
-model_path=os.path.join(path_output,'bimodal.h5')
+model_path=os.path.join(path_model,'bimodal.h5')
 
 model.save(model_path, include_optimizer=False)
 
