@@ -134,5 +134,10 @@ dmypy.json
 /docker/rclone/log/*
 /docker/rclone/.config/*
 
+# airflow mount
+/docker/airflow/logs/*
+/docker/airflow/plugins/*
+
+
 # models files
 *.h5
