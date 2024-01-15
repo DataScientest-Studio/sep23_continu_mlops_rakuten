@@ -9,10 +9,15 @@ COPY script_path.py /app
 # Mettez à jour pip
 RUN pip install --upgrade pip
 
+
 # Installez MLflow
 RUN pip install mlflow[extras]
 
-RUN python3 script_path.py
+# Configuration des variables d'environnement pour MLflow
+ENV MLFLOW_TRACKING_URI=/app/MLflow
+ENV MLFLOW_ARTIFACT_URI=/app/MLflow
+
+#RUN python3 script_path.py
 
 # Exposez le port utilisé par le serveur MLflow
 EXPOSE 5000

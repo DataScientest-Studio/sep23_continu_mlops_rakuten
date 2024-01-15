@@ -8,7 +8,7 @@ services:
      
 
     volumes:
-      - ../rclone/data:/app/
+      - ../rclone/data/MLflow:/app/MLflow
       #- /mnt/d/MLops_Rakuten/data:/app/data ##Pour essayer sur les images stockées en local
     ports:
       - 5000:5000
