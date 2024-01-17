@@ -56,7 +56,16 @@ path_mlflow=os.getenv('path_mlflow')
 
 
 ##demarrer mlflow
-experiment_id = mlflow.create_experiment('training_rakuten')
+
+def get_or_create_experiment(name):
+    experiment = mlflow.get_experiment_by_name(name)
+    if experiment:
+        return experiment.experiment_id
+    else:
+        return mlflow.create_experiment(name)
+    
+experiment_id = get_or_create_experiment('training_rakuten')
+#experiment_id = mlflow.create_experiment('training_rakuten')
 with mlflow.start_run(experiment_id =experiment_id):
 
     ###Les fichiers csv proviennent du challenge Rakuten
@@ -399,7 +408,7 @@ with mlflow.start_run(experiment_id =experiment_id):
     evaluate_path=os.path.join(path_model,filename)
     artifact_path=os.path.join(path_mlflow,filename)
 
-    def evaluate_model(model, gen_test, validation_steps, path, artifact_path):
+    def evaluate_model(model, gen_test, validation_steps, path):
         y_true = []
         y_pred = []
 
@@ -425,12 +434,11 @@ with mlflow.start_run(experiment_id =experiment_id):
         with open(path, "w") as file:
             file.write(report_str)
 
-        mlflow.log_artifact(artifact_path)
+        mlflow.log_artifact(path)
 
     # Utilisez la fonction
     gen_test = generator(dataset_test, text_test_set)
-    evaluate_model(model, gen_test, validation_steps, evaluate_path,artifact_path)
-
+    evaluate_model(model, gen_test, validation_steps, evaluate_path)
 
 
     model_path=os.path.join(path_model,'bimodal.h5')
@@ -438,7 +446,7 @@ with mlflow.start_run(experiment_id =experiment_id):
     
     model.save(model_path, include_optimizer=False)
 
-    mlflow.log_artifact(model_artifact_path)
+    mlflow.log_artifact(model_path)
 
     mlflow.end_run()
 
