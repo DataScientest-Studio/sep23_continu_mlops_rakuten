@@ -1,9 +1,22 @@
-FROM python:3.9
-RUN pip3 install fastapi uvicorn
+FROM ubuntu:20.04
+
+# maj paquets et installer python
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copiez les dépendances
+COPY ./requirements.txt /app/requirements.txt
+
+# Répertoire de travail
 WORKDIR /app
-RUN mkdir /data
-COPY ./api /app
-COPY ./data /data
-RUN pip3 install -r requirements.txt
+
+# Installez les dépendances
+RUN pip3 install -r requirements.txt && \
+    pip install typing-extensions --upgrade
+
+# Exposez le port utilisé par l'API
 EXPOSE 8000
-CMD ["uvicorn", "api_v2:api", "--host", "0.0.0.0", "--reload","--port", "8000"]
+
+# Commande pour exécuter l'API
+CMD ["uvicorn", "api_v3:api", "--host", "0.0.0.0", "--reload","--port", "8000"]

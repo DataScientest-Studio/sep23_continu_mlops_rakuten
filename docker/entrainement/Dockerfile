@@ -11,7 +11,9 @@ COPY bimodel_training.py /app
 
 # Installation des dépendances nécessaires
 RUN pip3 install --upgrade pip && pip3 install requests
+RUN pip3 install --upgrade pip setuptools
 RUN pip3 install -r requirements.txt
+RUN pip3 install mlflow --ignore-installed blinker
 
 # Téléchargement des stopwords NLTK
 RUN python3 -m nltk.downloader stopwords
