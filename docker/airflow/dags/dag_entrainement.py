@@ -28,7 +28,6 @@ docker_compose_up = BashOperator(
 docker_compose_down = BashOperator(
     task_id='docker_compose_down',
     bash_command='docker-compose -f /opt/docker/entrainement/docker-compose.yml down',
-    user='root',
     dag=dag,
 )
 
