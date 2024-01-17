@@ -1,17 +1,16 @@
-version: "3.9"
+version: '3'
+
 services:
-  web:
-    build: ./docker/fastapi
-    networks:
-      - rakuten_network
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "8000:8000"
-    volumes : 
-      -./docker/fastapi :/app/data
-
-volumes:
-  rakuten_volume:
-
-networks:
-  rakuten_network:
-     driver : bridge
+      - 8000:8000
+    volumes:
+      - ../../api/api_v3.py:/app/api_v3.py
+      - ../../data/:/data/
+      - ./requirements.txt:/app/requirements.txt
+      - ../rclone/data/data:/docker/rclone/data/data
+      - ../rclone/data/images/new_images:/docker/rclone/data/images/new_images
+      - ../rclone/data/images/image_test:/docker/rclone/data/images/image_test

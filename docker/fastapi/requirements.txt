@@ -1,6 +1,5 @@
 pandas
 passlib
-gdown
 numpy
 regex
 glob2
@@ -13,3 +12,6 @@ scikit-learn
 nltk
 PyJWT
 pickle5
+fastapi
+uvicorn
+pydantic

@@ -31,9 +31,6 @@ import nltk
 df = pd.read_csv('../docker/rclone/data/data/df_test.csv')
 df = df[["productid", "path", "Titre_annonce", "Description"]]
 
-products_images_list = pd.read_csv('../docker/rclone/data/data/products_images_list.csv', header=0, index_col=0)
-df_new_product = pd.read_csv('../docker/rclone/data/data/new_products.csv', header=0, index_col=0)
-df_feedback = pd.read_csv('../docker/rclone/data/data/ProductUserFeedback.csv', header=0, index_col=0)
 
 nltk.download('stopwords')
 nltk.download('wordnet')
@@ -260,7 +257,7 @@ async def get_prediction(productid):
 
     if not df_product.empty:
 
-        image_file = "../docker/rclone/data/images/" + str(df_product["path"].iloc[0]).split('/')[-1]
+        image_file = "../docker/rclone/data/images/image_test/" + str(df_product["path"].iloc[0]).split('/')[-1]
 
         texts_product = df_product.loc[:,("Titre_annonce", "Description")]
         if texts_product['Description'].iloc[0] == "nodata":
@@ -308,6 +305,9 @@ async def get_prediction_input(titre: str = Form(...),
     Renvoie la prédiction de la catégorie du produit basée sur le titre, 
     la description (optionnelle) et l'image fournis.
     """
+
+    products_images_list = pd.read_csv('../docker/rclone/data/data/products_images_list.csv', header=0, index_col=0)
+    df_new_product = pd.read_csv('../docker/rclone/data/data/new_products.csv', header=0, index_col=0)
 
     new_productid = max(products_images_list['productid']) + 1
     new_imageid =  max(products_images_list['imageid']) + 1
@@ -366,6 +366,7 @@ async def add_data(product_feedback : Item):
     Renvoie : Les différentes informations de l'article qui ont été ajouté à la base
 
     '''
+    df_feedback = pd.read_csv('../docker/rclone/data/data/ProductUserFeedback.csv', header=0, index_col=0)
 
     data_to_add = pd.DataFrame.from_dict(product_feedback).T
     data_to_add['datetime'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
