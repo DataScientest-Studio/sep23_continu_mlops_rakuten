@@ -400,7 +400,8 @@ with mlflow.start_run(experiment_id =experiment_id):
         validation_steps = validation_steps,
         verbose=1,
         epochs=10,
-        callbacks=[lr_plateau, early_stopping,MlflowLoggerCallback()]
+        #callbacks=[lr_plateau, early_stopping,MlflowLoggerCallback()]
+        callbacks=[lr_plateau, early_stopping]
     )
     now = datetime.now()
     formatted_datetime = now.strftime("%Y%m%d_%H%M%S")
