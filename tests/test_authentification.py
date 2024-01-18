@@ -1,13 +1,8 @@
 from fastapi.testclient import TestClient
-
 from passlib.context import CryptContext
-from tests.api_test  import api
+from api_test  import api
 client = TestClient(api)
-#from test_api import app
 
-
-#pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-#client = TestClient(app)
 def test_api():
     
     response = client.post("/token", data={"username": "luffy", "password": "123456789", "grant_type": "password"},
@@ -18,10 +13,3 @@ def test_api():
     assert "access_token" in response_data
     assert response_data
     print (response_data )
-    #assert "token_type" == "bearer"
-    
-    
-    #response = client.get("/status")
-    #message = response.json()
-    #assert message
-    #assert response.json() == {"username": "luffy", "password": "123456789"}
