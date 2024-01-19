@@ -57,6 +57,9 @@ path_mlflow=r'/app/drive/MLflow/'
 
 ##demarrer mlflow
 
+mlflow.set_tracking_uri("http://rakuten_network:5000")
+
+
 def get_or_create_experiment(name):
     experiment = mlflow.get_experiment_by_name(name)
     if experiment:
@@ -153,6 +156,10 @@ with mlflow.start_run(experiment_id =experiment_id):
 
     y_train_final =y_train.prdtypecode
 
+    
+    print("Dimensions de y_train_final:", y_train_final.shape)
+    
+
 
     ### encodage identique de y pour les 2 models text et image
 
@@ -176,6 +183,7 @@ with mlflow.start_run(experiment_id =experiment_id):
     with open(label_output_path_pickle, "wb") as handle:
         pickle.dump(le, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+    
 
     # Création de nos ensemble d'apprentissage et test
 
