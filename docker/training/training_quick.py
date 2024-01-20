@@ -373,9 +373,7 @@ with mlflow.start_run(experiment_id =experiment_id):
     model = load_model(path_model_prod)
 
     ### on freeze toutes les couches presentes avant le merge 
-    for layer in model.layers:
-        if layer.name == 'attention':
-            break
+    for layer in model.layers[:12]:
         layer.trainable = False
 
     model.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])
@@ -392,13 +390,13 @@ with mlflow.start_run(experiment_id =experiment_id):
 
     # Réduction automatique du taux d'apprentissage
     lr_plateau = callbacks.ReduceLROnPlateau(monitor='val_loss',
-                                            patience=2,
+                                            patience=1,
                                             factor=0.1,
                                             verbose=2,
                                             mode='min')
 
     early_stopping = callbacks.EarlyStopping(monitor='val_loss',
-                                            patience=3,
+                                            patience=1,
                                             mode='min',
                                             restore_best_weights=True)
 
@@ -417,7 +415,7 @@ with mlflow.start_run(experiment_id =experiment_id):
         validation_data = gen_test,
         validation_steps = validation_steps,
         verbose=1,
-        epochs=10,
+        epochs=3,
         callbacks=[lr_plateau, early_stopping,MlflowLoggerCallback()]
         #callbacks=[lr_plateau, early_stopping]
     )
