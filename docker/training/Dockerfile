@@ -8,6 +8,7 @@ WORKDIR /app
 # Copie du script de test dans le conteneur
 COPY requirements.txt /app
 COPY bimodel_training.py /app
+COPY training_quick.py /app
 
 # Installation des dépendances nécessaires
 RUN pip3 install --upgrade pip && pip3 install requests
