@@ -1,0 +1,78 @@
+version: '3.8'
+
+
+services:
+  rclone:
+    build:
+      context: ./rclone
+    command: ["/bin/sh", "/copy_fichiers.sh"]
+    volumes:
+      - shared-data:/drive
+    networks:
+      - rakuten_network
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"  
+    depends_on:
+      - rclone
+    volumes:
+      - shared-data:/app/drive
+      - data:/app/data
+    command: /bin/sh -c "sleep 90 && uvicorn api_v3:api --host 0.0.0.0"
+    networks:
+      - rakuten_network  
+
+  entrainement:
+    build:
+      context: ./training
+      dockerfile: Dockerfile
+    command: mlflow server --host 0.0.0.0 --port 5000
+    depends_on:
+    - rclone
+    ports:
+    - "5000:5000"
+    volumes:
+    - shared-data:/app/drive
+    
+    networks:
+    - rakuten_network 
+  
+  airflow:
+    image: apache/airflow:2.4.0
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/airflow.cfg:/opt/airflow/airflow.cfg
+      - shared-data:/app/drive
+      - data:/app/data
+    ports:
+      - "8080:8080"
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    
+    command: >
+      bash -c "
+      airflow db init &&
+      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com &&
+      airflow scheduler &
+      airflow webserver"
+    networks:
+      - rakuten_network
+
+volumes:
+  shared-data:
+    driver: local
+  data: 
+    driver: local 
+  postgres-db-volume:
+
+networks:
+  rakuten_network:
+    driver: bridge

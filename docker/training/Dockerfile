@@ -19,5 +19,14 @@ RUN pip3 install mlflow --ignore-installed blinker
 RUN python3 -m nltk.downloader stopwords
 RUN python3 -m nltk.downloader wordnet
 
+RUN ln -s /app/drive/MLflow/mlruns /app/mlruns
+
+# Exposez le port utilisé par le serveur MLflow
+EXPOSE 5000
+
+#environment:
+ENV MLFLOW_TRACKING_URI=/app/drive/MLflow
+ENV MLFLOW_ARTIFACT_URI=/app/drive/MLflow
+
 # Commande à exécuter lorsque le conteneur est lancé
-CMD ["python3", "bimodel_training.py"]
+CMD ["mlflow", "ui", "--host", "0.0.0.0"]
