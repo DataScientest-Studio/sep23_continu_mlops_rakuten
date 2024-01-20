@@ -1,0 +1,2 @@
+Lors de la 1ere execution, si les fichiers ne sont pas entierement telechargé dans l image rclone, il se peut que l image entrainement echoue a etre lancee.
+Attendre quelques minutes et refaire un docker compose up
