@@ -364,8 +364,8 @@ with mlflow.start_run(experiment_id =experiment_id):
 ##### Les patiences sont également fixé à 1 afin d'avoir un entrainement rapide pour la démo            
             
                 
-    train_steps = math.ceil(len(y_train)/32) /32  ### /32 pour diminuer temps par epoch
-    validation_steps = math.ceil(len(y_test)/32) /32  ### /32 pour diminuer temps par epoch
+    train_steps = round(math.ceil(len(y_train)/32) /32)  ### /32 pour diminuer temps par epoch
+    validation_steps = round(math.ceil(len(y_test)/32) /32)  ### /32 pour diminuer temps par epoch
 
 
     model.fit(
