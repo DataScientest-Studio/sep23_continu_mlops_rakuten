@@ -5,11 +5,14 @@ RUN apt-get update && \
     apt-get install -y python3 python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
-# Copiez les dépendances
-COPY ./requirements.txt /app/requirements.txt
-
 # Répertoire de travail
 WORKDIR /app
+
+# Copiez les dépendances
+COPY ./requirements.txt /app/requirements.txt
+COPY ./api_v3.py /app
+
+RUN mkdir /app/data
 
 # Installez les dépendances
 RUN pip3 install -r requirements.txt && \

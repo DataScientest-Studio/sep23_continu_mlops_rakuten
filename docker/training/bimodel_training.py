@@ -48,14 +48,17 @@ if gpus:
 
 ###import des variables environnement donnees ds docker-compose
 
-path_data=  os.getenv('path_input_data')  
-path_images_train=  os.getenv('path_images_train') 
-path_images_test=  os.getenv('path_images_test')   
-path_model=  os.getenv('path_model') 
-path_mlflow=os.getenv('path_mlflow')
+path_data=  r'/app/drive/data/'
+path_images_train=  r'/app/drive/images/image_train' 
+path_images_test=  r'/app/drive/images/image_test'  
+path_model=  r'/app/drive/models_entrainement/'
+path_mlflow=r'/app/drive/MLflow/'
 
 
 ##demarrer mlflow
+
+mlflow.set_tracking_uri("http://entrainement:5000")
+
 
 def get_or_create_experiment(name):
     experiment = mlflow.get_experiment_by_name(name)
@@ -65,7 +68,7 @@ def get_or_create_experiment(name):
         return mlflow.create_experiment(name)
     
 experiment_id = get_or_create_experiment('training_rakuten')
-#experiment_id = mlflow.create_experiment('training_rakuten')
+
 with mlflow.start_run(experiment_id =experiment_id):
 
     ###Les fichiers csv proviennent du challenge Rakuten
@@ -153,6 +156,10 @@ with mlflow.start_run(experiment_id =experiment_id):
 
     y_train_final =y_train.prdtypecode
 
+    
+    print("Dimensions de y_train_final:", y_train_final.shape)
+    
+
 
     ### encodage identique de y pour les 2 models text et image
 
@@ -176,6 +183,7 @@ with mlflow.start_run(experiment_id =experiment_id):
     with open(label_output_path_pickle, "wb") as handle:
         pickle.dump(le, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+    
 
     # Création de nos ensemble d'apprentissage et test
 
@@ -401,6 +409,7 @@ with mlflow.start_run(experiment_id =experiment_id):
         verbose=1,
         epochs=10,
         callbacks=[lr_plateau, early_stopping,MlflowLoggerCallback()]
+        #callbacks=[lr_plateau, early_stopping]
     )
     now = datetime.now()
     formatted_datetime = now.strftime("%Y%m%d_%H%M%S")
