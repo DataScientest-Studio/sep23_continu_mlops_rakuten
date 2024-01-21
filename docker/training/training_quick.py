@@ -235,16 +235,7 @@ with mlflow.start_run(experiment_id =experiment_id):
     text_test_set = text_test_set.map(lambda text, y: [text, y]).batch(32).repeat(-1)
 
 
-    # input_layer = Input(shape=(100,))  
-    # embedding_layer = Embedding(input_dim=vocab_size, output_dim=100, input_length=100)(input_layer)
-    # conv_layer = Conv1D(filters=128, kernel_size=5, activation='relu')(embedding_layer)
-    # global_max_pooling_layer = GlobalMaxPooling1D()(conv_layer)
-
-    # output_layer = Dense(1024, activation='relu')(global_max_pooling_layer)
-    # model_te = Model(inputs=input_layer, outputs=output_layer)
-
-    # model_te.summary()
-
+    
 
     ##################################################################################################
     #model image
@@ -309,33 +300,7 @@ with mlflow.start_run(experiment_id =experiment_id):
     dataset_test = dataset_test.map(lambda x, y : [load_image(x), y], num_parallel_calls=-1).batch(32).repeat(-1)
 
 
-    ####### Changer le input_shape avec la bonne resolution
-
-    # efficientNet = EfficientNetB1(include_top=False, input_shape=(200, 200, 3))
-
-    # for layer in efficientNet.layers:
-    #     layer.trainable = False
-
-        
-    # #efficientNet.summary()
-
-
-    # # Modèle
-    # inputs_image = Input(shape=(200, 200, 3))
-    # x = efficientNet(inputs_image)
-    # x = GlobalAveragePooling2D()(x)
-    # x = Dense(1024, activation='relu')(x)
-    # x = Dropout(0.5)(x)
-    # outputs = Dense(27, activation='softmax')(x)
-
-    # model_im = Model(inputs=inputs_image, outputs=outputs)
-    # model_im.summary()
-
-
-
-    # ### on defreeze les 4 dernieres layers
-    # for layer in efficientNet.layers[-4:]:
-    #     layer.trainable = True
+    
 
     ##################################################################################################
     #concatenation des 2 models => bimodal
@@ -358,18 +323,6 @@ with mlflow.start_run(experiment_id =experiment_id):
 
 
 
-    # attention_output = Attention()([x, output_layer])
-    # concatenated = Concatenate()([attention_output, x, output_layer])
-
-    # concatenated = Dense(1024, activation='relu',name='dense_' + 'concat')(concatenated)
-    # concatenated = Dropout(0.3,name= 'dropout_' + 'concat')(concatenated)
-    # output = layers.Dense(27, activation='softmax')(concatenated)
-
-    # model = Model([inputs_image, input_layer], output)
-
-    ###utilisaton du model bimodal.h5
-
-    #model.summary()
     model = load_model(path_model_prod)
 
     ### on freeze toutes les couches presentes avant le merge 
@@ -406,8 +359,14 @@ with mlflow.start_run(experiment_id =experiment_id):
             logs = logs or {}
             mlflow.log_metrics(logs, step=epoch)
 
-    train_steps = math.ceil(len(y_train)/32)
-    validation_steps = math.ceil(len(y_test)/32)
+
+##### Pour accelerer l entrainement on va diminuer drastiquement train_steps afin que chaque epoch soit rapide. Mais on va augmenter le nombre d epochs a 20
+##### Les patiences sont également fixé à 1 afin d'avoir un entrainement rapide pour la démo            
+            
+                
+    train_steps = math.ceil(len(y_train)/32) /32  ### /32 pour diminuer temps par epoch
+    validation_steps = math.ceil(len(y_test)/32) /32  ### /32 pour diminuer temps par epoch
+
 
     model.fit(
         x=gen_train,
@@ -415,7 +374,7 @@ with mlflow.start_run(experiment_id =experiment_id):
         validation_data = gen_test,
         validation_steps = validation_steps,
         verbose=1,
-        epochs=3,
+        epochs=20,
         callbacks=[lr_plateau, early_stopping,MlflowLoggerCallback()]
         #callbacks=[lr_plateau, early_stopping]
     )

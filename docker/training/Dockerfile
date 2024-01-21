@@ -14,7 +14,8 @@ COPY training_quick.py /app
 RUN pip3 install --upgrade pip && pip3 install requests
 RUN pip3 install --upgrade pip setuptools
 RUN pip3 install -r requirements.txt
-RUN pip3 install mlflow --ignore-installed blinker
+#RUN pip3 install mlflow --ignore-installed blinker
+RUN pip3 install --ignore-installed mlflow
 
 # Téléchargement des stopwords NLTK
 RUN python3 -m nltk.downloader stopwords
