@@ -1,7 +1,7 @@
 version: '3.8'
 
 x-airflow-common: &airflow-common
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.1.1}
+  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.8.1}
   
   environment: &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -24,6 +24,7 @@ x-airflow-common: &airflow-common
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
     - shared-data:/app/drive
+    - /var/run/docker.sock:/var/run/docker.sock
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
   depends_on:
     redis:
@@ -98,7 +99,8 @@ services:
       retries: 50
     restart: always
     networks:
-      - rakuten_network 
+      - rakuten_network
+
 
   airflow-webserver:
     <<: *airflow-common
@@ -112,7 +114,7 @@ services:
       retries: 5
     restart: always
     networks:
-      - rakuten_network  
+      - rakuten_network
     
 
   airflow-scheduler:
@@ -129,7 +131,7 @@ services:
       retries: 5
     restart: always
     networks:
-      - rakuten_network  
+      - rakuten_network
     
 
   airflow-worker:
@@ -144,7 +146,7 @@ services:
       retries: 5
     restart: always
     networks:
-      - rakuten_network  
+      - rakuten_network
     
 
   airflow-init:
@@ -157,7 +159,8 @@ services:
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
     networks:
-      - rakuten_network  
+      - rakuten_network
+
 
   flower:
     <<: *airflow-common
@@ -171,7 +174,7 @@ services:
       retries: 5
     restart: always
     networks:
-      - rakuten_network  
+      - rakuten_network
   
   
 

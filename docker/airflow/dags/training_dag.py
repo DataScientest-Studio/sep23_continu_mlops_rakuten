@@ -14,7 +14,7 @@ training_dag = DAG(
  
 run_training_script = BashOperator(
    task_id="run_training_script_task",
-   bash_command="docker exec docker-entrainement-1 python /app/training_quick.py",
+   bash_command="docker exec docker-entrainement-1 python training_quick.py",
    dag=training_dag
 )
  
