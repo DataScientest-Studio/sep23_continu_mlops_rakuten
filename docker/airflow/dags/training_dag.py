@@ -24,3 +24,4 @@ run_training_script = BashOperator(
 #     command=["python", "./training_quick.py"],
 #     dag=training_dag
 # )
+
