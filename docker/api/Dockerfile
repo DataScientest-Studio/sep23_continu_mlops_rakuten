@@ -10,7 +10,7 @@ WORKDIR /app
 
 # Copiez les dépendances
 COPY ./requirements.txt /app/requirements.txt
-COPY ./api_v3.py /app
+COPY ./api.py /app
 
 RUN mkdir /app/data
 
@@ -22,4 +22,4 @@ RUN pip3 install -r requirements.txt && \
 EXPOSE 8000
 
 # Commande pour exécuter l'API
-CMD ["uvicorn", "api_v3:api", "--host", "0.0.0.0", "--reload","--port", "8000"]
+CMD ["uvicorn", "api:api", "--host", "0.0.0.0", "--reload","--port", "8000"]
