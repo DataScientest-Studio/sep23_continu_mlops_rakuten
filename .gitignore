@@ -128,11 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# rclone mount
-/docker/rclone/data/*
-/docker/rclone/cache/*
-/docker/rclone/log/*
-/docker/rclone/.config/*
 
 # airflow mount
 /docker/airflow/logs/*

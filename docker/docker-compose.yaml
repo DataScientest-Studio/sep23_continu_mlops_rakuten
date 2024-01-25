@@ -1,50 +1,8 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
+version: '3.8'
 
-# Basic Airflow cluster configuration for CeleryExecutor with Redis and PostgreSQL.
-#
-# WARNING: This configuration is for local development. Do not use it in a production deployment.
-#
-# This configuration supports basic configuration using environment variables or an .env file
-# The following variables are supported:
-#
-# AIRFLOW_IMAGE_NAME           - Docker image name used to run Airflow.
-#                                Default: apache/airflow:master-python3.8
-# AIRFLOW_UID                  - User ID in Airflow containers
-#                                Default: 50000
-# AIRFLOW_GID                  - Group ID in Airflow containers
-#                                Default: 50000
-#
-# Those configurations are useful mostly in case of standalone testing/running Airflow in test/try-out mode
-#
-# _AIRFLOW_WWW_USER_USERNAME   - Username for the administrator account (if requested).
-#                                Default: airflow
-# _AIRFLOW_WWW_USER_PASSWORD   - Password for the administrator account (if requested).
-#                                Default: airflow
-# _PIP_ADDITIONAL_REQUIREMENTS - Additional PIP requirements to add when starting all containers.
-#                                Default: ''
-#
-# Feel free to modify this file to suit your needs.
----
-version: "3"
 x-airflow-common: &airflow-common
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.1.1}
-  #image: alexluneau/airflow
+  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.8.1}
+  
   environment: &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
@@ -59,15 +17,18 @@ x-airflow-common: &airflow-common
     AIRFLOW__SMTP__SMTP_USER: "de.airflow@gmail.com"
     AIRFLOW__SMTP__SMTP_PASSWORD: "cfsrvkongsobheta"
     AIRFLOW__SMTP__SMTP_MAIL_FROM: "de.airflow@gmail.com"
+    API_USERNAME: ${API_USERNAME}
+    API_PASSWORD: ${API_PASSWORD}
 
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- pymongo}
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- pymongo mlflow}
   volumes:
-    - ./dags:/opt/airflow/dags
-    - ./logs:/opt/airflow/logs
-    - ./plugins:/opt/airflow/plugins
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./airflow/plugins:/opt/airflow/plugins
+    - shared-data:/app/drive
     - /var/run/docker.sock:/var/run/docker.sock
-    - ../../docker:/opt/docker
-  user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
+  #user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
+  user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
   depends_on:
     redis:
       condition: service_healthy
@@ -75,6 +36,45 @@ x-airflow-common: &airflow-common
       condition: service_healthy
 
 services:
+  rclone:
+    build:
+      context: ./rclone
+    command: ["/bin/sh", "/copy_fichiers.sh"]
+    volumes:
+      - shared-data:/drive
+    networks:
+      - rakuten_network
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"  
+    depends_on:
+      - rclone
+    volumes:
+      - shared-data:/app/drive
+      - data:/app/data
+    command: /bin/sh -c "sleep 90 && uvicorn api:api --host 0.0.0.0"
+    networks:
+      - rakuten_network  
+
+  entrainement:
+    build:
+      context: ./training
+      dockerfile: Dockerfile
+    command: mlflow server --host 0.0.0.0 --port 5000
+    depends_on:
+    - rclone
+    ports:
+    - "5000:5000"
+    volumes:
+    - shared-data:/app/drive
+    
+    networks:
+    - rakuten_network 
+  
   postgres:
     image: postgres:13
     environment:
@@ -82,12 +82,14 @@ services:
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
     volumes:
-      - postgres-db-volume:/var/lib/postgresql/data
+    - postgres-db-volume:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 5s
       retries: 5
     restart: always
+    networks:
+      - rakuten_network 
 
   redis:
     image: redis:latest
@@ -99,6 +101,9 @@ services:
       timeout: 30s
       retries: 50
     restart: always
+    networks:
+      - rakuten_network
+
 
   airflow-webserver:
     <<: *airflow-common
@@ -111,6 +116,9 @@ services:
       timeout: 10s
       retries: 5
     restart: always
+    networks:
+      - rakuten_network
+    
 
   airflow-scheduler:
     <<: *airflow-common
@@ -125,6 +133,9 @@ services:
       timeout: 10s
       retries: 5
     restart: always
+    networks:
+      - rakuten_network
+    
 
   airflow-worker:
     <<: *airflow-common
@@ -137,16 +148,22 @@ services:
       timeout: 10s
       retries: 5
     restart: always
+    networks:
+      - rakuten_network
+    
 
   airflow-init:
     <<: *airflow-common
-    command: version
+    command: bash -c "airflow db init && airflow version"
     environment:
       <<: *airflow-common-env
       _AIRFLOW_DB_UPGRADE: "true"
       _AIRFLOW_WWW_USER_CREATE: "true"
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+    networks:
+      - rakuten_network
+
 
   flower:
     <<: *airflow-common
@@ -159,6 +176,19 @@ services:
       timeout: 10s
       retries: 5
     restart: always
+    networks:
+      - rakuten_network
+  
+  
 
 volumes:
+  shared-data:
+    driver: local
+  data: 
+    driver: local 
   postgres-db-volume:
+  
+
+networks:
+  rakuten_network:
+    driver: bridge

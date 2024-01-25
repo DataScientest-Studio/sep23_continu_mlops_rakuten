@@ -28,12 +28,9 @@ import nltk
 # --------
 
 # données produits
-df = pd.read_csv('../docker/rclone/data/data/df_test.csv')
+df = pd.read_csv('/app/drive/data/df_test.csv')
 df = df[["productid", "path", "Titre_annonce", "Description"]]
 
-products_images_list = pd.read_csv('../docker/rclone/data/data/products_images_list.csv', header=0, index_col=0)
-df_new_product = pd.read_csv('../docker/rclone/data/data/new_products.csv', header=0, index_col=0)
-df_feedback = pd.read_csv('../docker/rclone/data/data/ProductUserFeedback.csv', header=0, index_col=0)
 
 nltk.download('stopwords')
 nltk.download('wordnet')
@@ -41,12 +38,12 @@ nltk.download('wordnet')
 # -------
 # modele
 # -------
-model = load_model('../data/bimodal.h5')
+model = load_model('/app/drive/models/bimodal.h5')
 
-with open("../data/label_encoder.pickle", "rb") as handle:
+with open("/app/drive/data/label_encoder.pickle", "rb") as handle:
     le = pickle.load(handle)
 
-with open("../data/tokenizer.pickle", "rb") as handle:
+with open("/app/drive/data/tokenizer.pickle", "rb") as handle:
     tokenizer = pickle.load(handle)
 
 def preprocess_image(image_path, resize=(200, 200)):
@@ -260,7 +257,7 @@ async def get_prediction(productid):
 
     if not df_product.empty:
 
-        image_file = "../docker/rclone/data/images/" + str(df_product["path"].iloc[0]).split('/')[-1]
+        image_file = "/app/drive/images/image_test/" + str(df_product["path"].iloc[0]).split('/')[-1]
 
         texts_product = df_product.loc[:,("Titre_annonce", "Description")]
         if texts_product['Description'].iloc[0] == "nodata":
@@ -309,19 +306,22 @@ async def get_prediction_input(titre: str = Form(...),
     la description (optionnelle) et l'image fournis.
     """
 
+    products_images_list = pd.read_csv('/app/drive/data/products_images_list.csv', header=0, index_col=0)
+    df_new_product = pd.read_csv('/app/drive/data/new_products.csv', header=0, index_col=0)
+
     new_productid = max(products_images_list['productid']) + 1
     new_imageid =  max(products_images_list['imageid']) + 1
 
     # maj liste produits/images
     products_images_list.loc[len(products_images_list)] = [new_productid, new_imageid]
-    products_images_list.to_csv('../docker/rclone/data/data/products_images_list.csv')
+    products_images_list.to_csv('/app/drive/data/products_images_list.csv')
 
     # Sauvegarde nouveau produit
     df_new_product.loc[len(df_new_product)] = [titre, description, new_productid, new_imageid]
-    df_new_product.to_csv('../docker/rclone/data/data/new_products.csv')
+    df_new_product.to_csv('/app/drive/data/new_products.csv')
 
     # Sauvegarde de l'image
-    image_path = f"../docker/rclone/data/images/new_images/image_{new_imageid}_product_{new_productid}.jpg"
+    image_path = f"/app/drive/images/new_images/image_{new_imageid}_product_{new_productid}.jpg"
     with open(image_path, "wb") as buffer:
         shutil.copyfileobj(image.file, buffer)
 
@@ -366,11 +366,12 @@ async def add_data(product_feedback : Item):
     Renvoie : Les différentes informations de l'article qui ont été ajouté à la base
 
     '''
+    df_feedback = pd.read_csv('/app/drive/data/ProductUserFeedback.csv', header=0, index_col=0)
 
     data_to_add = pd.DataFrame.from_dict(product_feedback).T
     data_to_add['datetime'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
     df_feedback.loc[len(df_feedback)] = list(data_to_add.loc[1])
-    df_feedback.to_csv('../docker/rclone/data/data/ProductUserFeedback.csv')
+    df_feedback.to_csv('/app/drive/data/ProductUserFeedback.csv')
 
     return product_feedback
