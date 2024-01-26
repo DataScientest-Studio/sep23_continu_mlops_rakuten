@@ -2,13 +2,16 @@ from airflow import DAG
 from airflow.utils.dates import days_ago
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
+from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import BranchPythonOperator
 
 import pandas as pd
 from mlflow.entities import ViewType
 import mlflow
 import os
+import shutil
 
-path_model_prod=  r'/app/drive/models_entrainement/'  
+path_model_prod=  r'/app/drive/models/'  
 
 training_dag = DAG(
    dag_id="training_script",
@@ -23,46 +26,76 @@ training_dag = DAG(
 # tâche pour vérifier la présence de nouvelles données
 def check_new_product( task_instance):
    df_new_texts = pd.read_csv('/app/drive/data/new_products.csv', usecols=['designation', 'description', 'productid', 'imageid'])
-   if len(df_new_texts) == 0:
-      raise Exception("Pas de nouvelles données")
-
-check_new_product_script = PythonOperator(
+   return 'no_new_data_task' if len(df_new_texts) == 0 else 'branch_task2'
+      
+""" check_new_product_script = PythonOperator(
    task_id='check_new_product_script_task',
    python_callable=check_new_product,
    dag=training_dag
+) """
+
+branch_task = BranchPythonOperator(
+    task_id='branch_task',
+    python_callable=check_new_product,
+    dag=training_dag
 )
-
-
+  
 
 # tâches pour rajouter les textes et les images dans les données d'entrainement
 def get_new_texts():
+   
+
    df_x_train = pd.read_csv('/app/drive/data/X_train_update.csv', usecols=['designation', 'description', 'productid', 'imageid'])
-   df_new_texts = pd.read_csv('/app/drive/data/new_products.csv', usecols=['designation', 'description', 'productid', 'imageid'])
-   df_y_train = pd.read_csv('/app/drive/data/Y_train.csv', usecols=['prdtypecode'])
-   df_new_catagories = pd.read_csv('/app/drive/data/new_products_categories.csv', usecols=['prdtypecode'])
+   df_y_train=pd.read_csv('/app/drive/data/Y_train.csv', usecols=['prdtypecode'])
+   df_product_feedback = pd.read_csv('/app/drive/data/ProductUserFeedback.csv', usecols=['productid', 'categoryid'])
+   df_new_product = pd.read_csv('/app/drive/data/new_products.csv', usecols=['designation', 'description', 'productid', 'imageid'])
 
-   df_x_train_new = pd.concat([df_x_train, df_new_texts], axis=0, ignore_index=True)
-   df_x_train_new.to_csv('/app/drive/data/X_train_update.csv')
-   df_y_train_new = pd.concat([df_y_train, df_new_catagories], axis=0, ignore_index=True)
-   df_y_train_new.to_csv('/app/drive/data/Y_train.csv')
+   df_merged = pd.merge(df_new_product, df_product_feedback, on='productid')
+   y_merged=df_merged['categoryid']
+   y_merged = y_merged.to_frame(name='prdtypecode')
+   df_merged=df_merged.drop('categoryid',axis=1)
 
-   df_new_product = pd.DataFrame(columns=['designation', 'description', 'productid', 'imageid'])
-   df_new_product.to_csv('/app/drive/data/new_products.csv')
-   df_new_product_categories = pd.DataFrame(columns=['prdtypecode'])
-   df_new_product_categories.to_csv('/app/drive/data/new_products_categories.csv')
+   if df_merged.empty:
+      return 'end_task'
+   else:
+      X_train =pd.concat([df_x_train,df_merged ])
+      y_merged = pd.concat([df_y_train,y_merged] )
+      #df_final = df_merged[df_merged['categoryPredicted'] == df_merged['categoryid']]
+      #df_x_train_updated = pd.concat([df_x_train, df_final], axis=0, ignore_index=True)
+      X_train=X_train.reset_index()
+      y_merged=y_merged.reset_index()
+      X_train.to_csv('/app/drive/data/X_train_update.csv', index=False)
+      y_merged.to_csv('/app/drive/data/Y_train.csv', index=False)
 
-add_new_texts_script = PythonOperator(
-   task_id='add_new_texts_script_task',
-   python_callable=get_new_texts,
-   dag=training_dag
+      ###vider les fichiers
+      df_product_feedback= pd.DataFrame(columns=df_product_feedback.columns)
+      df_product_feedback.to_csv('/app/drive/data/ProductUserFeedback.csv', index=False)
+
+      df_new_product= pd.DataFrame(columns=df_new_product.columns)
+      df_new_product.to_csv('/app/drive/data/new_products.csv', index=False)
+
+      
+
+      for _, row in X_train.iterrows():
+            image_filename = f"image_{row['imageid']}_product_{row['productid']}.jpg"
+            source_path = os.path.join('/app/drive/images/new_images/', image_filename)
+            destination_path = os.path.join('/app/drive/images/image_train/', image_filename)
+
+            # Vérifier si le fichier existe avant de le déplacer
+            if os.path.exists(source_path):
+                # Déplacer l'image de source à destination
+                shutil.move(source_path, destination_path)
+      return 'run_training_script_task'
+
+
+
+
+branch_task2 = BranchPythonOperator(
+    task_id='branch_task2',
+    python_callable=get_new_texts,
+    dag=training_dag
 )
 
-
-add_new_images_script = BashOperator(
-   task_id="add_new_images_script_task",
-   bash_command="mv /app/drive/images/new_images/*.jpg /app/drive/images/image_train/",
-   dag=training_dag
-)
 
 
 # tâche pour lancer l'entrainement du modèle
@@ -120,7 +153,19 @@ accuracy_task = PythonOperator(
 )
 
 
+
+no_new_data_task = DummyOperator(
+    task_id='no_new_data_task',
+    dag=training_dag,
+)
+end_task = DummyOperator(
+    task_id='end_task',
+    dag=training_dag,
+)
+
 # dépendances
-check_new_product_script >> [add_new_texts_script, add_new_images_script]
-[add_new_texts_script, add_new_images_script] >> run_training_script
-run_training_script >> accuracy_task
+#check_new_product_script >> branch_task
+branch_task >> [no_new_data_task, branch_task2]
+branch_task2 >> [end_task, run_training_script]
+run_training_script >> accuracy_task >> end_task
+
