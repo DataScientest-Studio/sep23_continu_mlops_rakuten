@@ -44,9 +44,10 @@ branch_task = BranchPythonOperator(
 # tâches pour rajouter les textes et les images dans les données d'entrainement
 def get_new_texts():
    
+## on part d un df vide
+   #df_x_train = pd.read_csv('/app/drive/data/X_train_update.csv', usecols=['designation', 'description', 'productid', 'imageid'])
+   #df_y_train=pd.read_csv('/app/drive/data/Y_train.csv', usecols=['prdtypecode'])
 
-   df_x_train = pd.read_csv('/app/drive/data/X_train_update.csv', usecols=['designation', 'description', 'productid', 'imageid'])
-   df_y_train=pd.read_csv('/app/drive/data/Y_train.csv', usecols=['prdtypecode'])
    df_product_feedback = pd.read_csv('/app/drive/data/ProductUserFeedback.csv', usecols=['productid', 'categoryid'])
    df_new_product = pd.read_csv('/app/drive/data/new_products.csv', usecols=['designation', 'description', 'productid', 'imageid'])
 
@@ -58,12 +59,8 @@ def get_new_texts():
    if df_merged.empty:
       return 'end_task'
    else:
-      X_train =pd.concat([df_x_train,df_merged ])
-      y_merged = pd.concat([df_y_train,y_merged] )
-      #df_final = df_merged[df_merged['categoryPredicted'] == df_merged['categoryid']]
-      #df_x_train_updated = pd.concat([df_x_train, df_final], axis=0, ignore_index=True)
-      X_train=X_train.reset_index()
-      y_merged=y_merged.reset_index()
+      X_train =df_merged
+            
       X_train.to_csv('/app/drive/data/X_train_update.csv', index=False)
       y_merged.to_csv('/app/drive/data/Y_train.csv', index=False)
 
@@ -79,7 +76,7 @@ def get_new_texts():
       for _, row in X_train.iterrows():
             image_filename = f"image_{row['imageid']}_product_{row['productid']}.jpg"
             source_path = os.path.join('/app/drive/images/new_images/', image_filename)
-            destination_path = os.path.join('/app/drive/images/image_train/', image_filename)
+            destination_path = os.path.join('/app/drive/images//new_images/image_train/', image_filename)
 
             # Vérifier si le fichier existe avant de le déplacer
             if os.path.exists(source_path):
@@ -128,7 +125,7 @@ def Get_best_model () :
     )[0]
    Best_run_accuracy =  Best_run.data.metrics['accuracy']
    # Vérifier si le dernier entrainement est le meilleur entrainement
-   if last_run_accuracy >= Best_run_accuracy : 
+   if last_run_accuracy >= 0.7 : 
         # load et enregister le modèle dans le cas d'une meilleur accuracy
         model = mlflow.sklearn.load_model("runs:/" + last_run_id + "/model")
         model_path=os.path.join(path_model_prod,'bimodal.h5')

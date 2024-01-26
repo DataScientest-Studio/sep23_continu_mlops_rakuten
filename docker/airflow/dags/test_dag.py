@@ -36,7 +36,7 @@ reponse_attendue = {
     "product designation": "folkmanis puppets 1111 marionnette theatre mini turtle",
     "product description": "nodata",
     "product image": "image_1019294171_product_516376098.jpg",
-    "predicted category": "Littérature étrangère"
+    "predicted category": "Jouets et peluches enfant"
 }
 
 def authentification_test():

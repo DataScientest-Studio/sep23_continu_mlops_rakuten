@@ -352,8 +352,8 @@ async def get_prediction_input(titre: str = Form(...),
  
 class Item(BaseModel):
     productID:str
-    categoryPredicted:str
-    categoryChangedByUser:str
+    #categoryPredicted:str
+    #categoryChangedByUser:str
     categoryID:str
 
 @api.post('/Feedback')

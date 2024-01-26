@@ -49,7 +49,7 @@ if gpus:
 ###import des variables environnement donnees ds docker-compose
 
 path_data=  r'/app/drive/data/'
-path_images_train=  r'/app/drive/images/image_train' 
+path_images_train=  r'/app/drive/images/new_images/image_train' 
 path_images_test=  r'/app/drive/images/image_test'  
 path_model_prod= r'/app/drive/models/bimodal.h5'
 path_model=  r'/app/drive/models_entrainement/'
