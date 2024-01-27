@@ -6,19 +6,19 @@ chmod -R 777 /drive/
 
 ###Shell est séquentiel du coup, tant que le transfer rclone n est pas termine, rien ne ce passe mise a part le message d attente
 while [ ! -f "/drive/donnees_entrainement/data.tar" ]; do
-    echo "En attente du fichier /drive/data.tar..."
+    echo "En attente du fichier /drive/donnes_entrainement/data.tar..."
     sleep 60  # Attendre 60 secondes avant de vérifier à nouveau
 done
 
 if [ ! -f "/drive/donnees_entrainement/data.tar" ]; then
-    # Créer le répertoire de destination s'il n'existe pas
-        # Décompresser le fichier tar dans le répertoire de destination
-    tar -xf "/drive/donnees_entrainement/data.tar" -C "/drive/donnees_entrainement"
-    echo "Le fichier tar a été décompressé dans /donnees_entrainement/"
+    echo "Le fichier images.tar a été trouvé. Decompression en cours sans écraser les fichiers existants"
+
+    tar -xf "/drive/donnees_entrainement/data.tar" --skip-old-files -C "/drive/donnees_entrainement"
+    echo "Le fichier tar a été décompressé dans /drive/donnees_entrainement/"
     
     chmod -R 777 /drive/donnees_entrainement/
 else
-    echo "Le fichier images.tar existe déjà "
+    echo "Le fichier data.tar n'existe pas dans /drive/donnees_entrainement."
 fi
 
 sync_to_drive() {
