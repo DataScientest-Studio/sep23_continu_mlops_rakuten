@@ -89,8 +89,10 @@ with mlflow.start_run(experiment_id =experiment_id):
     def remove_accents(text):
         return unidecode(text) if pd.notnull(text) else text
 
-    X_train['designation'] = X_train['designation'].apply(remove_accents)
-    X_train['description'] = X_train['description'].apply(remove_accents)
+    print(X_train)
+    
+    X_train['designation'] = X_train['designation'].astype(str).apply(remove_accents)
+    X_train['description'] = X_train['description'].astype(str).apply(remove_accents)
 
 
     # Convertir les majuscules en minuscules

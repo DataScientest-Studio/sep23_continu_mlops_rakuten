@@ -66,17 +66,17 @@ def get_new_texts():
 
       ###vider les fichiers
       df_product_feedback= pd.DataFrame(columns=df_product_feedback.columns)
-      df_product_feedback.to_csv('/app/drive/data/ProductUserFeedback.csv', index=False)
+      #df_product_feedback.to_csv('/app/drive/data/ProductUserFeedback.csv', index=False)
 
       df_new_product= pd.DataFrame(columns=df_new_product.columns)
-      df_new_product.to_csv('/app/drive/data/new_products.csv', index=False)
+      #df_new_product.to_csv('/app/drive/data/new_products.csv', index=False)
 
       
 
       for _, row in X_train.iterrows():
             image_filename = f"image_{row['imageid']}_product_{row['productid']}.jpg"
             source_path = os.path.join('/app/drive/images/new_images/', image_filename)
-            destination_path = os.path.join('/app/drive/images//new_images/image_train/', image_filename)
+            destination_path = os.path.join('/app/drive/images/new_images/image_train/', image_filename)
 
             # Vérifier si le fichier existe avant de le déplacer
             if os.path.exists(source_path):
