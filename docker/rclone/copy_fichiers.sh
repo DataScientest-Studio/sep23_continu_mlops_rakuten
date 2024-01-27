@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Copier les fichiers initiaux depuis le drive
-rclone --config /rclone.conf copy "Gdrive_rakuten2:/" /drive --exclude "/images/image_train/**" --exclude "/images/image_test/**"  
+rclone --config /rclone.conf copy "Gdrive_rakuten2:/" /drive --exclude "images/image_train/**" --exclude "images/image_test/**"  
 chmod -R 777 /drive/
 
 ###Shell est séquentiel du coup, tant que le transfer rclone n est pas termine, rien ne ce passe mise a part le message d attente
@@ -23,12 +23,12 @@ fi
 
 sync_to_drive() {
     echo "Copying files to drive"
-    rclone --config /rclone.conf copy /drive Gdrive_rakuten2:/ --exclude "/images/image_train/**" --exclude "/images/image_test/**" --exclude "/donnees_entrainement**"
+    rclone --config /rclone.conf copy /drive Gdrive_rakuten2:/ --exclude "images/image_train/**" --exclude "images/image_test/**" --exclude "donnees_entrainement/**"
 }
 
 sync_from_drive() {
     echo "De google drive à local"
-    rclone --config /rclone.conf copy Gdrive_rakuten2:/ /drive --exclude "/images/image_train/**" --exclude "/images/image_test/**" --exclude "/donnees_entrainement**"
+    rclone --config /rclone.conf copy Gdrive_rakuten2:/ /drive --exclude "images/image_train/**" --exclude "images/image_test/**" --exclude "donnees_entrainement/**"
 }
 
 
