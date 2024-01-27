@@ -13,7 +13,7 @@ done
 if [ -f "/drive/donnees_entrainement/data.tar" ]; then
     echo "Le fichier images.tar a été trouvé. Decompression en cours sans écraser les fichiers existants"
 
-    tar -xf "/drive/donnees_entrainement/data.tar" --skip-old-files -C "/drive/donnees_entrainement"
+    tar -xf "/drive/donnees_entrainement/data.tar" -k -C "/drive/donnees_entrainement"
     echo "Le fichier tar a été décompressé dans /drive/donnees_entrainement/"
     
     chmod -R 777 /drive/donnees_entrainement/
