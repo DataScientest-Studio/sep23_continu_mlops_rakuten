@@ -344,8 +344,10 @@ async def get_prediction_input(titre: str = Form(...),
 
     if predicted_label[0] in categories:
         return {
-            'predicted category': categories[predicted_label[0]]
-        }
+            'predicted category': categories[predicted_label[0]],
+            "new_productid": new_productid
+            }
+        
     else:
         raise HTTPException(status_code=401, detail='Prediction de categorie invalide')
 
