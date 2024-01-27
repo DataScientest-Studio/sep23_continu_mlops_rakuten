@@ -64,7 +64,7 @@ def get_new_texts():
       df_product_feedback_empty.to_csv('/app/drive/data/ProductUserFeedback.csv', index=False)
       
       column_names = ['', 'designation', 'description', 'productid','imageid']
-      df_new_product= pd.DataFrame(columns=df_new_product.columns)
+      df_new_product= pd.DataFrame(columns=column_names)
       df_new_product.to_csv('/app/drive/data/new_products.csv', index=False)
 
       
