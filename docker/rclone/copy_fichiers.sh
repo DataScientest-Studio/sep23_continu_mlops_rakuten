@@ -10,7 +10,7 @@ while [ ! -f "/drive/donnees_entrainement/data.tar" ]; do
     sleep 60  # Attendre 60 secondes avant de vérifier à nouveau
 done
 
-if [ ! -f "/drive/donnees_entrainement/data.tar" ]; then
+if [ -f "/drive/donnees_entrainement/data.tar" ]; then
     echo "Le fichier images.tar a été trouvé. Decompression en cours sans écraser les fichiers existants"
 
     tar -xf "/drive/donnees_entrainement/data.tar" --skip-old-files -C "/drive/donnees_entrainement"
