@@ -49,8 +49,8 @@ if gpus:
 ###import des variables environnement donnees ds docker-compose
 
 path_data=  r'/app/drive/data/'
-path_images_train=  r'/app/drive/images/new_images/image_train' 
-path_images_test=  r'/app/drive/images/image_test'  
+path_images_train=  r'/donnees_entrainement/image_train' 
+path_images_test=  r'/donnees_entrainement/image_test'  
 path_model_prod= r'/app/drive/models/bimodal.h5'
 path_model=  r'/app/drive/models_entrainement/'
 path_mlflow=r'/app/drive/MLflow/'
@@ -91,8 +91,8 @@ with mlflow.start_run(experiment_id =experiment_id):
 
     print(X_train)
     
-    X_train['designation'] = X_train['designation'].astype(str).apply(remove_accents)
-    X_train['description'] = X_train['description'].astype(str).apply(remove_accents)
+    X_train['designation'] = X_train['designation'].apply(remove_accents)
+    X_train['description'] = X_train['description'].apply(remove_accents)
 
 
     # Convertir les majuscules en minuscules

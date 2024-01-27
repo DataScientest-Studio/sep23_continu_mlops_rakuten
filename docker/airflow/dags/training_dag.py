@@ -9,7 +9,7 @@ import pandas as pd
 from mlflow.entities import ViewType
 import mlflow
 import os
-import shutil
+import glob
 
 path_model_prod=  r'/app/drive/models/'  
 
@@ -22,78 +22,29 @@ training_dag = DAG(
     }
 )
 
+# Fonction pour vérifier la présence d'un fichier .tar
+def check_tar_files():
+    directory_path = '/app/drive/'
+    
+    # Recherchez tous les fichiers .tar dans le répertoire
+    tar_files = glob.glob(os.path.join(directory_path, '*.tar'))
+    
+    # Vérifiez si la liste des fichiers .tar est vide
+    if tar_files:
+        print(f"Fichiers .tar trouvés : {tar_files}")
+        return 'run_training_script_task'
+    else:
+        print("Aucun fichier .tar trouvé")
+        return 'no_new_data_task'
+     
 
-# tâche pour vérifier la présence de nouvelles données
-def check_new_product( task_instance):
-   df_new_texts = pd.read_csv('/app/drive/data/new_products.csv', usecols=['designation', 'description', 'productid', 'imageid'])
-   return 'no_new_data_task' if len(df_new_texts) == 0 else 'branch_task2'
-      
-""" check_new_product_script = PythonOperator(
-   task_id='check_new_product_script_task',
-   python_callable=check_new_product,
-   dag=training_dag
-) """
 
 branch_task = BranchPythonOperator(
     task_id='branch_task',
-    python_callable=check_new_product,
+    python_callable=check_tar_files,
     dag=training_dag
 )
   
-
-# tâches pour rajouter les textes et les images dans les données d'entrainement
-def get_new_texts():
-   
-## on part d un df vide
-   #df_x_train = pd.read_csv('/app/drive/data/X_train_update.csv', usecols=['designation', 'description', 'productid', 'imageid'])
-   #df_y_train=pd.read_csv('/app/drive/data/Y_train.csv', usecols=['prdtypecode'])
-
-   df_product_feedback = pd.read_csv('/app/drive/data/ProductUserFeedback.csv', usecols=['productid', 'categoryid'])
-   df_new_product = pd.read_csv('/app/drive/data/new_products.csv', usecols=['designation', 'description', 'productid', 'imageid'])
-
-   df_merged = pd.merge(df_new_product, df_product_feedback, on='productid')
-   y_merged=df_merged['categoryid']
-   y_merged = y_merged.to_frame(name='prdtypecode')
-   df_merged=df_merged.drop('categoryid',axis=1)
-
-   if df_merged.empty:
-      return 'end_task'
-   else:
-      X_train =df_merged
-            
-      X_train.to_csv('/app/drive/data/X_train_update.csv', index=False)
-      y_merged.to_csv('/app/drive/data/Y_train.csv', index=False)
-
-      ###vider les fichiers
-      df_product_feedback= pd.DataFrame(columns=df_product_feedback.columns)
-      #df_product_feedback.to_csv('/app/drive/data/ProductUserFeedback.csv', index=False)
-
-      df_new_product= pd.DataFrame(columns=df_new_product.columns)
-      #df_new_product.to_csv('/app/drive/data/new_products.csv', index=False)
-
-      
-
-      for _, row in X_train.iterrows():
-            image_filename = f"image_{row['imageid']}_product_{row['productid']}.jpg"
-            source_path = os.path.join('/app/drive/images/new_images/', image_filename)
-            destination_path = os.path.join('/app/drive/images/new_images/image_train/', image_filename)
-
-            # Vérifier si le fichier existe avant de le déplacer
-            if os.path.exists(source_path):
-                # Déplacer l'image de source à destination
-                shutil.move(source_path, destination_path)
-      return 'run_training_script_task'
-
-
-
-
-branch_task2 = BranchPythonOperator(
-    task_id='branch_task2',
-    python_callable=get_new_texts,
-    dag=training_dag
-)
-
-
 
 # tâche pour lancer l'entrainement du modèle
 run_training_script = BashOperator(
@@ -161,8 +112,7 @@ end_task = DummyOperator(
 )
 
 # dépendances
-#check_new_product_script >> branch_task
-branch_task >> [no_new_data_task, branch_task2]
-branch_task2 >> [end_task, run_training_script]
+
+branch_task >> [no_new_data_task, run_training_script]
 run_training_script >> accuracy_task >> end_task
 
