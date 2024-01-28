@@ -60,7 +60,7 @@ run_training_script = BashOperator(
 ### Si la tache d entrainement a fonctionné, les dossiers image_train, image_test sont deleted. On garde le fichier .tar pour la démo. En production, il faudrait l effacer et enlever le exclude ds rclone pour le fichier tar
 cleanup_task = BashOperator(
     task_id='cleanup_directory',
-    bash_command='rm -rf /app/drive/donnees_entrainement/images_train /app/drive/donnees_entrainement/images_test',
+    bash_command='rm -rf /app/drive/donnees_entrainement/image_train /app/drive/donnees_entrainement/image_test',
   ###  bash_command='rm -rf /app/drive/donnees_entrainement/images_train && rm -rf /app/drive/donnees_entrainement/images_test && rm -rf /app/drive/donnees_entrainement/data.tar',  on efface pas le fichier .tar pour la demo. Ca prendrait trop de temps a telecharger
     dag=training_dag,
 )
