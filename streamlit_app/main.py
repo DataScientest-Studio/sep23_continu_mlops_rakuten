@@ -6,8 +6,36 @@ import io
 # Titre de l'application Streamlit
 st.title("Envoi de données à l'API Rakuten")
 
+with st.form("login_form"):
+    st.write("Connexion")
+    username = st.text_input("Nom d'utilisateur")
+    password = st.text_input("Mot de passe", type="password")
+    login_submit = st.form_submit_button("Se connecter")
+
+    if login_submit:
+        # Envoi des informations de connexion à l'API
+        response = requests.post(
+            "http://localhost:8000/token",
+            data={
+                "username": username,
+                "password": password
+            }
+        )
+        if response.status_code == 200:
+            # Stockage du jeton d'accès
+            token_data = response.json()
+            st.session_state['token'] = token_data['access_token']
+            st.success("Connexion réussie!")
+        else:
+            st.error("Échec de la connexion.")
+
+
+
 if "new_productid" not in st.session_state:
     st.session_state.new_productid = None
+
+if 'token' in st.session_state:
+    headers = {"Authorization": f"Bearer {st.session_state['token']}"}
 
 categories = {
             2583: "Accessoires de piscine",
@@ -43,7 +71,7 @@ categories = {
 with st.form("my_form"):
     titre = st.text_input("Titre")
     description = st.text_area("Description")
-    image = st.file_uploader("Téléchargez une Image", type=['jpg', 'png'])
+    image = st.file_uploader("Téléchargez une Image", type=['jpg'])
 
     # Bouton de soumission du formulaire
     submitted = st.form_submit_button("Envoyer à FastAPI")
@@ -55,6 +83,7 @@ with st.form("my_form"):
         # Préparation de la requête
         response = requests.post(
             "http://localhost:8000/get_prediction_input",
+            headers=headers,
             files={
                 "titre": (None, titre),
                 "description": (None, description),
@@ -104,6 +133,7 @@ with st.form("feedback_form"):
         # Envoi des données à l'API
         response = requests.post(
             "http://localhost:8000/Feedback",
+            headers=headers,
             json=feedback_data
         )
 

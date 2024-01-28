@@ -11,6 +11,7 @@ import mlflow
 import os
 import glob
 import shutil
+import tarfile
 
 path_model_prod=  r'/app/drive/models/'  
 
@@ -23,19 +24,21 @@ training_dag = DAG(
     }
 )
 
-# Fonction pour vérifier la présence d'un fichier .tar
+
+# Fonction pour vérifier la présence d'un fichier .tar. Si le fichier tar est présent, le fichier est décompresser dans le dossier donnees_entrainement
 def check_tar_files():
-    directory_path = '/app/drive/'
+    file_path = '/app/drive/donnees_entrainement/data.tar'
+    extract_path='/app/drive/donnees_entrainement'
     
-    # Recherchez tous les fichiers .tar dans le répertoire
-    tar_files = glob.glob(os.path.join(directory_path, '*.tar'))
-    
-    # Vérifiez si la liste des fichiers .tar est vide
-    if tar_files:
-        print(f"Fichiers .tar trouvés : {tar_files}")
+    # Vérifier si le fichier spécifique existe
+    if os.path.exists(file_path):
+        print(f"Fichier trouvé : {file_path}")
+        with tarfile.open(file_path) as tar:
+            tar.extractall(path=extract_path)
+            print(f"File extracted to {extract_path}")
         return 'run_training_script_task'
     else:
-        print("Aucun fichier .tar trouvé")
+        print("Fichier data.tar non trouvé")
         return 'end_task'
      
 
@@ -54,6 +57,13 @@ run_training_script = BashOperator(
    dag=training_dag
 )
 
+### Si la tache d entrainement a fonctionné, les dossiers image_train, image_test sont deleted. On garde le fichier .tar pour la démo. En production, il faudrait l effacer et enlever le exclude ds rclone pour le fichier tar
+cleanup_task = BashOperator(
+    task_id='cleanup_directory',
+    bash_command='rm -rf /app/drive/donnees_entrainement/images_train /app/drive/donnees_entrainement/images_test',
+  ###  bash_command='rm -rf /app/drive/donnees_entrainement/images_train && rm -rf /app/drive/donnees_entrainement/images_test && rm -rf /app/drive/donnees_entrainement/data.tar',  on efface pas le fichier .tar pour la demo. Ca prendrait trop de temps a telecharger
+    dag=training_dag,
+)
 
 
 # tâche pour récupérer le meilleur modèle
@@ -125,4 +135,5 @@ end_task = DummyOperator(
 # dépendances
 
 branch_task >> [end_task, run_training_script]
-run_training_script >> accuracy_task >> end_task
+run_training_script >> cleanup_task>> accuracy_task >> end_task
+

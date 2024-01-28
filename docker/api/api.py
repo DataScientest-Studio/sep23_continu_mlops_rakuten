@@ -239,7 +239,7 @@ async def get_prediction(productid, current_user: str = Depends(get_current_user
 
     if not df_product.empty:
 
-        image_file = "/app/drive/images/image_test/" + str(df_product["path"].iloc[0]).split('/')[-1]
+        image_file = "/app/drive/data/" + str(df_product["path"].iloc[0]).split('/')[-1]
 
         texts_product = df_product.loc[:,("Titre_annonce", "Description")]
         if texts_product['Description'].iloc[0] == "nodata":
