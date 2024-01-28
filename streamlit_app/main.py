@@ -67,8 +67,8 @@ with st.form("my_form"):
             st.success("Réponse reçue de l'API:")
             
             response_data = response.json()
-            new_productid = response_data.get("new_productid", "Non spécifié")
-            cat_predicted = response_data.get("predicted category", "Non spécifié")
+            new_productid = response_data.get("new_productid", 0)
+            cat_predicted = response_data.get("predicted category", 0)
 
             st.write(f"catégorie du produit : {cat_predicted}")
             st.write(f"ID du nouveau produit : {new_productid}")
@@ -113,5 +113,4 @@ with st.form("feedback_form"):
             st.json(response.json())
         else:
             st.error("Erreur lors de l'envoi du feedback.")
-
 

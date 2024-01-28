@@ -10,6 +10,7 @@ from mlflow.entities import ViewType
 import mlflow
 import os
 import glob
+import shutil
 
 path_model_prod=  r'/app/drive/models/'  
 
@@ -35,7 +36,7 @@ def check_tar_files():
         return 'run_training_script_task'
     else:
         print("Aucun fichier .tar trouvé")
-        return 'no_new_data_task'
+        return 'end_task'
      
 
 
@@ -67,24 +68,38 @@ def Get_best_model () :
    # Récupérer l'accuracy du dernier entrainement 
    client = mlflow.tracking.MlflowClient()
    last_run = client.search_runs(experiment_ids="454740327196184364" ,filter_string="",run_view_type=ViewType.ACTIVE_ONLY,  order_by=["start_time DESC"], max_results=1,)
-   last_run_accuracy = last_run[0].data.metrics['accuracy']
+   last_run_accuracy = last_run[0].data.params['accuracy']
    # récuperer l'id du dernier entrainement qu'on utilisera pour stocker le modèle si performant
    last_run_id = last_run[0].info.run_id
    # Récupérer la meilleur accuracy de tous les entrainements sur Mlflow 
-   Best_run = client.search_runs(experiment_ids="454740327196184364",filter_string="",run_view_type=ViewType.ACTIVE_ONLY,max_results=1,
-    order_by=["metrics.accuracy DESC"],
-    )[0]
-   Best_run_accuracy =  Best_run.data.metrics['accuracy']
+   Best_run = client.search_runs(experiment_ids="454740327196184364",filter_string="",run_view_type=ViewType.ACTIVE_ONLY,max_results=1, order_by=["params.accuracy DESC"])[0]
+   Best_run_accuracy =  Best_run.data.params['accuracy']
+   
+   last_run_accuracy = float(last_run_accuracy)
+   Best_run_accuracy = float(Best_run_accuracy)
+
    # Vérifier si le dernier entrainement est le meilleur entrainement
    if last_run_accuracy >= 0.7 : 
-        # load et enregister le modèle dans le cas d'une meilleur accuracy
-        model = mlflow.sklearn.load_model("runs:/" + last_run_id + "/model")
-        model_path=os.path.join(path_model_prod,'bimodal.h5')
-        model.save(model_path, include_optimizer=False)
+        # Définir le chemin du fichier source et le chemin de destination
+        chemin_source = '/app/drive/models_entrainement/bimodal.h5'
+        chemin_destination = '/app/drive/models/bimodal.h5'
+        try:
+            shutil.copy(chemin_source, chemin_destination)
+            print("Fichier copié avec succès.")
+        except IOError as e:
+            print("Impossible de copier le fichier. " + str(e))
         return last_run_accuracy
    else : 
        #sinon retourner la meilleur accuracy déja connu
        return Best_run_accuracy
+   
+def function_with_return(task_instance):   
+   # Récuperer la meilleur accuracy 
+   best_accuracy =  Get_best_model()
+   task_instance.xcom_push(
+      key="Meilleur_accuracy",
+      value= best_accuracy
+    )
    
 def function_with_return(task_instance):   
    # Récuperer la meilleur accuracy 
@@ -102,10 +117,6 @@ accuracy_task = PythonOperator(
 
 
 
-no_new_data_task = DummyOperator(
-    task_id='no_new_data_task',
-    dag=training_dag,
-)
 end_task = DummyOperator(
     task_id='end_task',
     dag=training_dag,
@@ -113,6 +124,6 @@ end_task = DummyOperator(
 
 # dépendances
 
-branch_task >> [no_new_data_task, run_training_script]
+branch_task >> [end_task, run_training_script]
 run_training_script >> accuracy_task >> end_task
 
