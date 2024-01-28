@@ -16,7 +16,7 @@ import tarfile
 path_model_prod=  r'/app/drive/models/'  
 
 training_dag = DAG(
-   dag_id="training_script",
+   dag_id="training_script2",
 #    schedule_interval="@daily",
    schedule_interval=None,
    default_args={
