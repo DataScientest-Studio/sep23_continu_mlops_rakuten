@@ -216,26 +216,8 @@ async def get_status():
         'status': 1
     }
 
-@api.get("/secured")
-def read_private_data(current_user: str = Depends(get_current_user)):
-    """
-    Description:
-    Cette route renvoie un message uniquement si l'utilisateur est authentifié.
-
-    Args:
-    - current_user (str, dépendance): Le nom d'utilisateur de l'utilisateur actuellement authentifié.
-
-    Returns:
-    - JSON: Renvoie un JSON contenant un message de salutation sécurisé si l'utilisateur est authentifié, sinon une réponse non autorisée.
-
-    Raises:
-    - HTTPException(401, detail="Unauthorized"): Si l'utilisateur n'est pas authentifié, une exception HTTP 401 Unauthorized est levée.
-    """
-
-    return {"message": "go pour planter l api!"}
-
 @api.get('/predictcategory/{productid:int}', name="Prédiction")
-async def get_prediction(productid):
+async def get_prediction(productid, current_user: str = Depends(get_current_user)):
     """
     Description :
     renvoie la prédiction de la catégorie du produit
@@ -257,7 +239,7 @@ async def get_prediction(productid):
 
     if not df_product.empty:
 
-        image_file = "/app/drive/images/image_test/" + str(df_product["path"].iloc[0]).split('/')[-1]
+        image_file = "/app/drive/data/" + str(df_product["path"].iloc[0]).split('/')[-1]
 
         texts_product = df_product.loc[:,("Titre_annonce", "Description")]
         if texts_product['Description'].iloc[0] == "nodata":
@@ -298,7 +280,8 @@ async def get_prediction(productid):
 
 
 @api.post("/get_prediction_input")
-async def get_prediction_input(titre: str = Form(...), 
+async def get_prediction_input(current_user: str = Depends(get_current_user),
+                               titre: str = Form(...), 
                                description: Optional[str] = Form(None), 
                                image: UploadFile = File(...)):
     """
@@ -344,20 +327,22 @@ async def get_prediction_input(titre: str = Form(...),
 
     if predicted_label[0] in categories:
         return {
-            'predicted category': categories[predicted_label[0]]
-        }
+            'predicted category': categories[predicted_label[0]],
+            "new_productid": new_productid
+            }
+        
     else:
         raise HTTPException(status_code=401, detail='Prediction de categorie invalide')
 
  
 class Item(BaseModel):
     productID:str
-    categoryPredicted:str
-    categoryChangedByUser:str
+    #categoryPredicted:str
+    #categoryChangedByUser:str
     categoryID:str
 
 @api.post('/Feedback')
-async def add_data(product_feedback : Item):
+async def add_data(product_feedback : Item, current_user: str = Depends(get_current_user)):
     '''
     Description :
     -   Ajout du feedback utilisateur sur la performance du modèle à la base de données 

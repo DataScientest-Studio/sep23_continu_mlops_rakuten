@@ -49,8 +49,9 @@ if gpus:
 ###import des variables environnement donnees ds docker-compose
 
 path_data=  r'/app/drive/data/'
-path_images_train=  r'/app/drive/images/image_train' 
-path_images_test=  r'/app/drive/images/image_test'  
+path_images_train=  r'/app/drive/donnees_entrainement/image_train' 
+path_csv= r'/app/drive/donnees_entrainement/'
+path_images_test=  r'/app/drive/donnees_entrainement/image_test'  
 path_model_prod= r'/app/drive/models/bimodal.h5'
 path_model=  r'/app/drive/models_entrainement/'
 path_mlflow=r'/app/drive/MLflow/'
@@ -75,8 +76,8 @@ with mlflow.start_run(experiment_id =experiment_id):
     ###Les fichiers csv proviennent du challenge Rakuten
     ### Une copie sur ce google drive : https://drive.google.com/drive/folders/1PltQt7eFWu5lkGf4jRdqqRIZaykBlta8?usp=drive_link
 
-    X_train_path=os.path.join(path_data,'X_train_update.csv')
-    y_train_path=os.path.join(path_data,'Y_train.csv')
+    X_train_path=os.path.join(path_csv,'X_train_update.csv')
+    y_train_path=os.path.join(path_csv,'Y_train.csv')
 
     X_train = pd.read_csv(X_train_path, index_col=0)
     y_train = pd.read_csv(y_train_path, index_col=0)
@@ -89,6 +90,8 @@ with mlflow.start_run(experiment_id =experiment_id):
     def remove_accents(text):
         return unidecode(text) if pd.notnull(text) else text
 
+    print(X_train)
+    
     X_train['designation'] = X_train['designation'].apply(remove_accents)
     X_train['description'] = X_train['description'].apply(remove_accents)
 
@@ -170,7 +173,7 @@ with mlflow.start_run(experiment_id =experiment_id):
     le = LabelEncoder()
     y_train_encoded = le.fit_transform(y_train_final)
 
-    joblib.dump(le, label_output_path)
+    #joblib.dump(le, label_output_path)
 
     ####One-hot
 
@@ -179,10 +182,10 @@ with mlflow.start_run(experiment_id =experiment_id):
 
     ###sauver le labelencoder
 
-    label_output_path_pickle=os.path.join(path_data,'label_encoder.pickle')
+    #label_output_path_pickle=os.path.join(path_data,'label_encoder.pickle')
 
-    with open(label_output_path_pickle, "wb") as handle:
-        pickle.dump(le, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    #with open(label_output_path_pickle, "wb") as handle:
+    #    pickle.dump(le, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     
 
@@ -217,10 +220,10 @@ with mlflow.start_run(experiment_id =experiment_id):
 
     ##sauver tokenizer
 
-    label_output_tokenizer=os.path.join(path_data,'tokenizer.pickle')
+    #label_output_tokenizer=os.path.join(path_data,'tokenizer.pickle')
 
-    with open(label_output_tokenizer, "wb") as handle:
-        pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    #with open(label_output_tokenizer, "wb") as handle:
+    #    pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
     # Dataset de notre jeu de données
