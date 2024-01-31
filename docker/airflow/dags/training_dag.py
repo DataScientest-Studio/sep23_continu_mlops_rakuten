@@ -18,7 +18,6 @@ path_model_prod=  r'/app/drive/models/'
 training_dag = DAG(
    dag_id="training_script",
    schedule_interval="@daily",
-   schedule_interval=None,
    default_args={
         'start_date': days_ago(0),
     }
