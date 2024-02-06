@@ -39,5 +39,5 @@ Lors du 1er lancement, il se peut que l'image d'entrainement se lance avant la f
 This project was developed by the following team :
 
 - Alexandre Laroche ([GitHub](https://github.com/) / [LinkedIn](http://linkedin.com/))
-- Meryem Nedjwa Maameri ([GitHub](https://github.com/) / [LinkedIn](http://linkedin.com/))
+- Meryem Nedjwa Maameri ([GitHub](https://github.com/) / [LinkedIn](https://www.linkedin.com/in/meryem-maameri/))
 - Alexandre Luneau ([GitHub](https://github.com/alexluneau) / [LinkedIn](http://www.linkedin.com/in/alexandre-luneau-6b45a51))
