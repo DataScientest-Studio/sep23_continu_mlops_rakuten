@@ -35,7 +35,7 @@ Lors du 1er lancement, il se peut que l'image d'entrainement se lance avant la f
         3 DAGS disponibles :
             - test : Test du bon fonctionnement de l'API. Tests d'authentification et de prédiction.
             - training : Déclenche le ré-entrainement et l'incorporation de nouvelles données image et texte. 
-            - feedback : traitement des feedbacks utilisateur pour être 
+            - feedback : traitement des feedbacks utilisateur 
 
 ## Streamlit
 
