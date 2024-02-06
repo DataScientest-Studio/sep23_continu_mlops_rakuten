@@ -95,7 +95,6 @@ end_task = DummyOperator(
 )
 
 # dépendances
-#check_new_product_script >> branch_task
 branch_task >> [end_task, get_texts_task]
 get_texts_task >> end_task
 

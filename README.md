@@ -1,5 +1,5 @@
 
-## Context du projet
+## Contexte du projet
 
 Ce projet est issu d'un challenge Rakuten qui avait pour objectif la prédiction d'une classe de produits Rakuten à partir de sa description texte et image (27 catégories).
 Sa réalisation a eu lieu dans le cadre de la formation MLops de Datascientest (https://datascientest.com/).
@@ -22,22 +22,38 @@ La mise en production de l'application est basée sur:
         echo 'API_USERNAME = luffy' >.env
         echo 'API_PASSWORD=<PWD de l API>' >>.env
         echo -e "AIRFLOW_UID=$(id -u)" >>.env
-    3 -Dans le dossier docker, rentrer dans votre shell :
+    3 - Dans le dossier docker, rentrer dans votre shell :
         docker compose up
 
 Le 1er lancement de "docker compose up" dure au moins 10 min (création des images docker), téléchargement des fichiers de google drive.
 Lors du 1er lancement, il se peut que l'image d'entrainement se lance avant la fin du téléchargement des fichiers de google drive, ce qui provoquera une erreur. Dans ce cas, attendre quelques minutes et refaire un "docker compose up".
 
-    4 - l'api est disponible et accessible localement à http://localhost:8080 . La documentation de l'api se trouve ici :  http://localhost:8080/docs
+    4 - L'api est disponible et accessible localement à http://localhost:8080
+        La documentation de l'api se trouve ici : http://localhost:8080/docs
     5 - MLflow est accessible ici : http://localhost:5000
-    6 - airflow est accessible ici : http://localhost:8080 :
+    6 - Airflow est accessible ici : http://localhost:8080
         3 DAGS disponibles :
-            - test_API : Test du bon fonctionnement de l'API. Tests d'authentification et de prédiction.
+            - test : Test du bon fonctionnement de l'API. Tests d'authentification et de prédiction.
             - training : Déclenche le ré-entrainement et l'incorporation de nouvelles données image et texte. 
+            - feedback : traitement des feedbacks utilisateur pour être 
 
+## Streamlit
 
-This project was developed by the following team :
+Une application Streamlit est disponible pour simuler l'interface utilisateur sur le site Rakuten.
 
-- Alexandre Laroche ([GitHub](https://github.com/) / [LinkedIn](http://linkedin.com/))
-- Meryem Nedjwa Maameri ([GitHub](https://github.com/) / [LinkedIn](https://www.linkedin.com/in/meryem-maameri/))
-- Alexandre Luneau ([GitHub](https://github.com/alexluneau) / [LinkedIn](http://www.linkedin.com/in/alexandre-luneau-6b45a51))
+Pour lancer l'application :
+
+```shell
+cd streamlit_app
+streamlit run main.py
+```
+
+L'application est accessible à l'adresse : [localhost:8501](http://localhost:8501)
+
+---
+
+Le projet a été développé par :
+
+- Alexandre Laroche ([GitHub](https://github.com/Alex-Laroche) / [LinkedIn](https://www.linkedin.com/in/alexandre-laroche-a96360263/))
+- Meryem Nedjwa Maameri ([GitHub](https://github.com/MeryemMAAMERI) / [LinkedIn](https://www.linkedin.com/in/meryem-maameri/))
+- Alexandre Luneau ([GitHub](https://github.com/alexluneau) / [LinkedIn](https://www.linkedin.com/in/alexandre-luneau-6b45a51))
